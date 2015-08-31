@@ -1,0 +1,13 @@
+2015-08-31.18-22-13 ssh-keygen -t rsa -C "whqwill@gmail.com"
+2015-08-31.18-22-38 ssh-keygen -t rsa -C "whqwill@gmail.com"
+2015-08-31.18-22-38 ssh-keygen -t rsa -C "whqwill@gmail.com"
+2015-08-31.18-23-01 ls -la
+2015-08-31.18-23-28 echo $SPARK_HOME
+2015-08-31.18-25-04 ssh -T git@github.com
+2015-08-31.18-25-38 git config --global user.name "whqwill"
+2015-08-31.18-25-58 git config --global user.email "whqwill@gmail.com"
+2015-08-31.18-26-36 git remote add origin git@github.com:whqwill/sparktest
+2015-08-31.18-28-04 git init
+2015-08-31.18-28-17 git remote add origin git@github.com:whqwill/sparktest
+2015-08-31.18-28-33 echo "# sparktest" >> README.md
+2015-08-31.18-28-55 git add -a
