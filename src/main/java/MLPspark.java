@@ -86,9 +86,11 @@ public class MLPspark {
         iris.shuffle();
         //System.out.println(iris);
         List<DataSet> next = iris.asList();
-        //System.out.println(next);
+        System.out.println(next.size());
 
         JavaRDD<DataSet> data = sc.parallelize(next);
+
+        System.out.println(data);
 
         MultiLayerNetwork network2 = master.fitDataSet(data);
 

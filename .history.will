@@ -1,0 +1,20 @@
+2015-08-31.18-39-29 ls
+2015-08-31.18-39-32 git init
+2015-08-31.18-40-16 git remote add origin https://github.com/whqwill/sparktest
+2015-08-31.18-40-28 git pull origin master
+2015-08-31.18-40-31 ls
+2015-08-31.18-41-10 git status
+2015-08-31.18-41-13 git status
+2015-08-31.18-43-28 git status
+2015-08-31.20-02-03 git status
+2015-08-31.20-02-41 git status
+2015-08-31.20-11-09 git status
+2015-08-31.20-28-05 spark-shell
+2015-08-31.20-32-32 spark-shell
+2015-08-31.23-49-17 spark-shell --master local[2]
+2015-09-01.13-48-50 ls
+2015-09-01.13-48-54 git history
+2015-09-01.13-48-57 git --help
+2015-09-01.13-49-17 git status
+2015-09-01.13-49-29 git add -a
+2015-09-01.13-49-38 git add a
