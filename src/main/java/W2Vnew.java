@@ -4,9 +4,9 @@
 
 
 import org.deeplearning4j.models.embeddings.WeightLookupTable;
-import org.deeplearning4j.models.embeddings.inmemory.InMemoryLookupTable;
+//import org.deeplearning4j.models.embeddings.inmemory.InMemoryLookupTable;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
-import org.deeplearning4j.models.word2vec.Word2Vec;
+//import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.deeplearning4j.models.word2vec.wordstore.inmemory.InMemoryLookupCache;
 import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
 import org.deeplearning4j.text.sentenceiterator.UimaSentenceIterator;
@@ -20,8 +20,8 @@ import org.springframework.core.io.ClassPathResource;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class W2V {
-    private static Logger log = LoggerFactory.getLogger(W2V.class);
+public class W2Vnew {
+    private static Logger log = LoggerFactory.getLogger(W2Vnew.class);
 
     public static void main(String[] args) throws Exception {
         long begintime = System.currentTimeMillis();
@@ -36,7 +36,7 @@ public class W2V {
         t.setTokenPreProcessor(new CommonPreprocessor());
 
         InMemoryLookupCache cache = new InMemoryLookupCache();
-        WeightLookupTable table = new InMemoryLookupTable.Builder()
+        InMemoryLookupTable table = new InMemoryLookupTable.Builder()
                 .vectorLength(100)
                 .useAdaGrad(false)
                 .cache(cache)
@@ -55,16 +55,14 @@ public class W2V {
 
         log.info("Writing word vectors to text file....");
         // Write word
-        WordVectorSerializer.writeWordVectors(vec, "pathToWriteto.txt");
+        //WordVectorSerializer.writeWordVectors(vec, "pathToWriteto.txt");
 
 
         log.info("Closest Words:");
         Collection<String> lst = vec.wordsNearest("day", 10);
-
         System.out.println(lst);
-        System.out.println(vec.similarity("day","year"));
+        System.out.println(vec.similarity("day", "year"));
         System.out.println(vec.similarity("day","should"));
-
         long endtime=System.currentTimeMillis();
         long costTime = (endtime - begintime);
         System.out.println("costTime:"+String.valueOf(costTime/1000.0)+"s");

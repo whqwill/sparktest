@@ -18,3 +18,18 @@
 2015-09-01.13-49-17 git status
 2015-09-01.13-49-29 git add -a
 2015-09-01.13-49-38 git add a
+2015-09-01.13-49-44 git add -A
+2015-09-01.13-49-52 git add -A
+2015-09-01.13-49-56 git --help
+2015-09-01.13-50-11 git commit -m "second commit"
+2015-09-01.13-50-11 git commit -m "second commit"
+2015-09-01.13-50-20 git commit -m "second commit"
+2015-09-01.13-50-38 less .history.will 
+2015-09-01.13-50-52 git push origin master
+2015-09-01.17-29-24 ls
+2015-09-01.17-31-28 ls
+2015-09-01.20-02-46 ls
+2015-09-02.04-30-14 git status
+2015-09-02.04-30-59 git status
+2015-09-02.04-31-09 git status
+2015-09-02.14-03-40 python

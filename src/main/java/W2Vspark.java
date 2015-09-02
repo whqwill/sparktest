@@ -30,6 +30,7 @@ public class W2Vspark {
     //        String dataPath = new ClassPathResource("spark_word2vec_test.txt").getFile().getAbsolutePath();
 
         System.out.println("step 4...");
+        System.out.println(dataPath);
         // Read in data
         JavaRDD<String> corpus = sc.textFile(dataPath);
 
@@ -44,13 +45,15 @@ public class W2Vspark {
                 .setUseAdaGrad(false)
                 .setVectorLength(100)
                 .setWindow(5)
-                .setAlpha(0.025).setMinAlpha(0.0001)
+                .setAlpha(0.025).setMinAlpha(0.01)
                 .setIterations(1)
                 .setNumWords(5);
 
+        System.out.println(word2Vec.getNumWords());
         System.out.println("step 6...");
         word2Vec.train(corpus);
 
+        System.out.println(word2Vec.getNumWords());
         System.out.println("step 7...");
         Collection<String> words = word2Vec.wordsNearest("day", 10);
         System.out.println(words);
