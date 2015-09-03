@@ -7,7 +7,8 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.deeplearning4j.models.word2vec.VocabWord;
 import org.deeplearning4j.models.word2vec.wordstore.inmemory.InMemoryLookupCache;
 import org.springframework.core.io.ClassPathResource;
-import org.deeplearning4j.spark.models.embeddings.word2vec.Word2Vec;
+//import org.deeplearning4j.spark.models.embeddings.word2vec.Word2Vec;
+import Spark.Word2Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,15 +17,15 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
-public class W2Vspark {
-    private static Logger log = LoggerFactory.getLogger(W2Vspark.class);
+public class W2Vsparknew {
+    private static Logger log = LoggerFactory.getLogger(W2Vsparknew.class);
 
     public static void main(String[] args) throws Exception {
         long begintime = System.currentTimeMillis();
 
         System.out.println("step 1...");
         // These are all default values for word2vec
-        SparkConf sparkConf = new SparkConf().setMaster("local").setAppName("sparktest");
+        SparkConf sparkConf = new SparkConf().setMaster("local[*]").setAppName("sparktest");
 
         System.out.println("step 2...");
         // Set SparkContext
@@ -33,7 +34,7 @@ public class W2Vspark {
         System.out.println("step 3...");
         // Path of data
         String dataPath = new ClassPathResource("raw_sentences.txt").getFile().getAbsolutePath();
-    //        String dataPath = new ClassPathResource("spark_word2vec_test.txt").getFile().getAbsolutePath();
+        //        String dataPath = new ClassPathResource("spark_word2vec_test.txt").getFile().getAbsolutePath();
 
         System.out.println("step 4...");
         System.out.println(dataPath);
