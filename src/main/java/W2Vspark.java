@@ -4,11 +4,17 @@
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.deeplearning4j.models.word2vec.VocabWord;
+import org.deeplearning4j.models.word2vec.wordstore.inmemory.InMemoryLookupCache;
 import org.springframework.core.io.ClassPathResource;
 import org.deeplearning4j.spark.models.embeddings.word2vec.Word2Vec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.FileWriter;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 
 public class W2Vspark {
     private static Logger log = LoggerFactory.getLogger(W2V.class);
@@ -52,6 +58,29 @@ public class W2Vspark {
         System.out.println(word2Vec.getNumWords());
         System.out.println("step 6...");
         word2Vec.train(corpus);
+
+        FileWriter writer=new FileWriter("tmp5.txt");
+        Iterator<VocabWord> tmp = word2Vec.vocab().tokens().iterator();
+        while (tmp.hasNext())
+            writer.write(tmp.next().getWord()+"\n");
+        writer.close();
+
+
+
+        writer=new FileWriter("tmp6.txt");
+        tmp = word2Vec.vocab().vocabWords().iterator();
+        while (tmp.hasNext())
+            writer.write(tmp.next().getWord()+"\n");
+        writer.close();
+
+        writer=new FileWriter("tt2.txt");
+        Iterator<Map.Entry<String,Double>> tt = ((InMemoryLookupCache) word2Vec.vocab()).wordFrequencies.entrySet().iterator();
+        while (tt.hasNext())
+        {
+            Map.Entry<String,Double> tp = tt.next();
+            writer.write(tp.getKey()+" "+String.valueOf(tp.getValue())+"\n");
+        }
+        writer.close();
 
         System.out.println(word2Vec.getNumWords());
         System.out.println("step 7...");

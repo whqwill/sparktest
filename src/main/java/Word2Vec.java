@@ -158,6 +158,20 @@ public class Word2Vec extends WordVectorsImpl {
 
         ActorSystem actorSystem = ActorSystem.create();
 
+        /*FileWriter writer=new FileWriter("tmp1.txt");
+        Iterator<VocabWord> tmp = lookupTable.getVocab().tokens().iterator();
+        while (tmp.hasNext())
+            writer.write(tmp.next().getWord()+"\n");
+        writer.close();
+
+        writer=new FileWriter("tmp2.txt");
+        tmp = lookupTable.getVocab().vocabWords().iterator();
+        while (tmp.hasNext())
+            writer.write(tmp.next().getWord()+"\n");
+        writer.close();*/
+
+
+
         for(int i = 0; i < numIterations; i++)
             doIteration(batch2,numWordsSoFar,nextRandom,actorSystem);
         actorSystem.shutdown();

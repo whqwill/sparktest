@@ -6,6 +6,7 @@
 import org.deeplearning4j.models.embeddings.WeightLookupTable;
 import org.deeplearning4j.models.embeddings.inmemory.InMemoryLookupTable;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
+import org.deeplearning4j.models.word2vec.VocabWord;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.deeplearning4j.models.word2vec.wordstore.inmemory.InMemoryLookupCache;
 import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
@@ -17,8 +18,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 
 public class W2V {
     private static Logger log = LoggerFactory.getLogger(W2V.class);
@@ -52,6 +56,29 @@ public class W2V {
 
         log.info("Fitting Word2Vec model....");
         vec.fit();
+
+        FileWriter writer=new FileWriter("tmp3.txt");
+        Iterator<VocabWord> tmp = vec.vocab().tokens().iterator();
+        while (tmp.hasNext())
+            writer.write(tmp.next().getWord()+"\n");
+        writer.close();
+
+        writer=new FileWriter("tmp4.txt");
+        tmp = vec.vocab().vocabWords().iterator();
+        while (tmp.hasNext())
+            writer.write(tmp.next().getWord()+"\n");
+        writer.close();
+
+
+        writer=new FileWriter("tt1.txt");
+        Iterator<Map.Entry<String,Double>> tt = ((InMemoryLookupCache) vec.vocab()).wordFrequencies.entrySet().iterator();
+        while (tt.hasNext())
+        {
+            Map.Entry<String,Double> tp = tt.next();
+            writer.write(tp.getKey()+" "+String.valueOf(tp.getValue())+"\n");
+        }
+        writer.close();
+
 
         log.info("Writing word vectors to text file....");
         // Write word
