@@ -167,6 +167,7 @@ public class FirstIterationFunction
         // Updated the Syn0 vector based on gradient. Syn0 is not random anymore.
         Nd4j.getBlasWrapper().level1().axpy(vectorLength, 1.0f, neu1e, l1);
 
+        int a = 0;
         indexSyn0VecMap.put(currentWordIndex, l1);
     }
 

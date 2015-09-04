@@ -184,6 +184,8 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
             syn0.getRow(i).divi(Math.abs(tmp));
         }*/
 
+        int a = 0;
+
         vocab = vocabCache;
         InMemoryLookupTable inMemoryLookupTable = new InMemoryLookupTable();
         inMemoryLookupTable.setVocab(vocabCache);
