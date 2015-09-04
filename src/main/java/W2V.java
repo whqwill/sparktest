@@ -89,8 +89,11 @@ public class W2V {
         Collection<String> lst = vec.wordsNearest("day", 10);
 
         System.out.println(lst);
-        System.out.println(vec.similarity("day","year"));
-        System.out.println(vec.similarity("day","should"));
+        System.out.println(vec.similarity("day", "year"));
+        System.out.println(vec.similarity("day", "should"));
+        System.out.println(vec.similarity("man","king"));
+        System.out.println(vec.similarity("man","you"));
+        System.out.println(vec.similarity("man","woman"));
 
         long endtime=System.currentTimeMillis();
         long costTime = (endtime - begintime);

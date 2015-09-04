@@ -25,6 +25,7 @@ public class FirstIterationFunction
         implements FlatMapFunction< Iterator<Tuple2<List<VocabWord>, Long>>, Entry<Integer, INDArray> > {
 
     private int ithIteration = 1;
+    protected INDArray syn0, syn1;
     private int vectorLength;
     private boolean useAdaGrad;
     private int negative;
@@ -54,8 +55,10 @@ public class FirstIterationFunction
         this.totalWordCount = Long.parseLong(word2vecVarMap.get("totalWordCount").toString());
         this.seed = Long.parseLong(word2vecVarMap.get("seed").toString());
         this.maxExp = Integer.parseInt(word2vecVarMap.get("maxExp").toString());
-        this.indexSyn0VecMap = new HashMap();
-        this.pointSyn1VecMap = new HashMap();
+        this.indexSyn0VecMap = new HashMap<Integer, INDArray>();
+        this.pointSyn1VecMap = new HashMap<Integer, INDArray>();
+        this.syn0 =  Nd4j.rand(this.seed, new int[]{300,vectorLength}).subi(0.5).divi(vectorLength);
+        this.syn1 = Nd4j.create(this.syn0.shape());
     }
 
     @Override
@@ -69,6 +72,8 @@ public class FirstIterationFunction
                     alpha - (alpha - minAlpha) * (sentenceCumSumCount / (double) totalWordCount));
             trainSentence(vocabWordsList, currentSentenceAlpha);
         }
+        //for (int i = 0; i < 300; i++)
+        //    indexSyn0VecMap.put(i, syn0.getRow(i));
         return indexSyn0VecMap.entrySet();
     }
 
@@ -106,22 +111,24 @@ public class FirstIterationFunction
     }
 
     public void iterateSample(VocabWord currentWord, VocabWord w2, double currentSentenceAlpha) {
+        if(w2 == null || w2.getIndex() < 0 || currentWord.getIndex() == w2.getIndex() || currentWord.getWord().equals("STOP") || w2.getWord().equals("STOP") || currentWord.getWord().equals("UNK") || w2.getWord().equals("UNK"))
+            return;
 
         final int currentWordIndex = currentWord.getIndex();
-        if (w2 == null || w2.getIndex() < 0 || currentWordIndex == w2.getIndex())
-            return;
+
 
         // error for current word and context
         INDArray neu1e = Nd4j.create(vectorLength);
 
         // First iteration Syn0 is random numbers
-        INDArray randomSyn0Vec;
-        if (pointSyn1VecMap.containsKey(w2.getIndex())) {
-            randomSyn0Vec = pointSyn1VecMap.get(w2.getIndex());
+        /*INDArray randomSyn0Vec;
+        if (indexSyn0VecMap.containsKey(w2.getIndex())) {
+            randomSyn0Vec = indexSyn0VecMap.get(w2.getIndex());
         } else {
             randomSyn0Vec = getRandomSyn0Vec(vectorLength); // 1 row of vector length of zeros
-            pointSyn1VecMap.put(w2.getIndex(), randomSyn0Vec);
-        }
+            indexSyn0VecMap.put(w2.getIndex(), randomSyn0Vec);
+        }*/
+        INDArray l1 = this.syn0.slice(w2.getIndex());
 
         //
         for (int i = 0; i < currentWord.getCodeLength(); i++) {
@@ -129,36 +136,38 @@ public class FirstIterationFunction
             int point = currentWord.getPoints().get(i);
 
             // Point to
-            INDArray syn1VecCurrentIndex;
+            /*INDArray syn1VecCurrentIndex;
             if (pointSyn1VecMap.containsKey(point)) {
                 syn1VecCurrentIndex = pointSyn1VecMap.get(point);
             } else {
-                syn1VecCurrentIndex = Nd4j.zeros(1, vectorLength); // 1 row of vector length of zeros
+                syn1VecCurrentIndex = Nd4j.create(1, vectorLength); // 1 row of vector length of zeros
                 pointSyn1VecMap.put(point, syn1VecCurrentIndex);
-            }
+            }*/
+            INDArray syn1 = this.syn1.slice(point);
 
             // Dot product of Syn0 and Syn1 vecs
-            double dot = Nd4j.getBlasWrapper().level1().dot(vectorLength, 1.0, randomSyn0Vec, syn1VecCurrentIndex);
+            double dot = Nd4j.getBlasWrapper().level1().dot(vectorLength, 1.0, l1, syn1);
 
             if (dot < -maxExp || dot >= maxExp)
                 continue;
 
             int idx = (int) ((dot + maxExp) * ((double) expTable.length / maxExp / 2.0));
-
+            if(idx >= expTable.length)
+                continue;
             //score
             double f = expTable[idx];
             //gradient
             double g = (1 - code - f) * (useAdaGrad ? currentWord.getGradient(i, currentSentenceAlpha) : currentSentenceAlpha);
 
 
-            Nd4j.getBlasWrapper().level1().axpy(vectorLength, g, syn1VecCurrentIndex, neu1e);
-            Nd4j.getBlasWrapper().level1().axpy(vectorLength, g, randomSyn0Vec, syn1VecCurrentIndex);
+            Nd4j.getBlasWrapper().level1().axpy(vectorLength, g, syn1, neu1e);
+            Nd4j.getBlasWrapper().level1().axpy(vectorLength, g, l1, syn1);
         }
 
         // Updated the Syn0 vector based on gradient. Syn0 is not random anymore.
-        Nd4j.getBlasWrapper().level1().axpy(vectorLength, 1.0f, neu1e, randomSyn0Vec);
+        Nd4j.getBlasWrapper().level1().axpy(vectorLength, 1.0f, neu1e, l1);
 
-        indexSyn0VecMap.put(currentWordIndex, randomSyn0Vec);
+        indexSyn0VecMap.put(currentWordIndex, l1);
     }
 
     public INDArray getRandomSyn0Vec(int vectorLength) {
