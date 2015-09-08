@@ -55,6 +55,7 @@ public class FirstIterationFunction
         this.totalWordCount = Long.parseLong(word2vecVarMap.get("totalWordCount").toString());
         this.seed = Long.parseLong(word2vecVarMap.get("seed").toString());
         this.maxExp = Integer.parseInt(word2vecVarMap.get("maxExp").toString());
+        this.ithIteration = Integer.parseInt(word2vecVarMap.get("iterations").toString());
         this.indexSyn0VecMap = new HashMap<Integer, INDArray>();
         this.pointSyn1VecMap = new HashMap<Integer, INDArray>();
         this.syn0 =  Nd4j.rand(this.seed, new int[]{300,vectorLength}).subi(0.5).divi(vectorLength);
@@ -118,14 +119,14 @@ public class FirstIterationFunction
         INDArray neu1e = Nd4j.create(vectorLength);
 
         // First iteration Syn0 is random numbers
-        INDArray randomSyn0Vec;
+        /*INDArray randomSyn0Vec;
         if (indexSyn0VecMap.containsKey(w2.getIndex())) {
             randomSyn0Vec = indexSyn0VecMap.get(w2.getIndex());
         } else {
             randomSyn0Vec = getRandomSyn0Vec(vectorLength); // 1 row of vector length of zeros
             indexSyn0VecMap.put(w2.getIndex(), randomSyn0Vec);
-        }
-        //INDArray l1 = this.syn0.slice(w2.getIndex());
+        }*/
+        INDArray randomSyn0Vec = this.syn0.slice(w2.getIndex());
 
         //
         for (int i = 0; i < currentWord.getCodeLength(); i++) {
@@ -133,14 +134,14 @@ public class FirstIterationFunction
             int point = currentWord.getPoints().get(i);
 
             // Point to
-            INDArray syn1VecCurrentIndex;
+            /*INDArray syn1VecCurrentIndex;
             if (pointSyn1VecMap.containsKey(point)) {
                 syn1VecCurrentIndex = pointSyn1VecMap.get(point);
             } else {
                 syn1VecCurrentIndex = Nd4j.create(1, vectorLength); // 1 row of vector length of zeros
                 pointSyn1VecMap.put(point, syn1VecCurrentIndex);
-            }
-            //INDArray syn1 = this.syn1.slice(point);
+            }*/
+            INDArray syn1VecCurrentIndex = this.syn1.slice(point);
 
             // Dot product of Syn0 and Syn1 vecs
             double dot = Nd4j.getBlasWrapper().level1().dot(vectorLength, 1.0, randomSyn0Vec, syn1VecCurrentIndex);
