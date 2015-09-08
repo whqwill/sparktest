@@ -6,6 +6,9 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.deeplearning4j.models.word2vec.VocabWord;
 import org.deeplearning4j.models.word2vec.wordstore.inmemory.InMemoryLookupCache;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.ops.transforms.Transforms;
 import org.springframework.core.io.ClassPathResource;
 //import org.deeplearning4j.spark.models.embeddings.word2vec.Word2Vec;
 import Spark.Word2Vec;
@@ -52,8 +55,8 @@ public class W2Vsparknew {
                 .setUseAdaGrad(false)
                 .setVectorLength(100)
                 .setWindow(5)
-                .setAlpha(0.025).setMinAlpha(0.01)
-                .setIterations(1)
+                .setAlpha(0.025).setMinAlpha(0)
+                .setIterations(10)
                 .setNumWords(5);
 
         System.out.println(word2Vec.getNumWords());
@@ -85,13 +88,15 @@ public class W2Vsparknew {
 
         System.out.println(word2Vec.getNumWords());
         System.out.println("step 7...");
-        Collection<String> words = word2Vec.wordsNearest("day", 10);
+        Collection<String> words = word2Vec.wordsNearest("day", 40);
         System.out.println(words);
-        System.out.println(word2Vec.similarity("day","year"));
-        System.out.println(word2Vec.similarity("day","should"));
+        System.out.println(word2Vec.similarity("day", "year"));
+        System.out.println(word2Vec.similarity("day", "should"));
         System.out.println(word2Vec.similarity("man","king"));
         System.out.println(word2Vec.similarity("man","you"));
         System.out.println(word2Vec.similarity("man","woman"));
+        System.out.println(Nd4j.getBlasWrapper().dot(word2Vec.getWordVectorMatrix("day"), word2Vec.getWordVectorMatrix("night")));
+        System.out.println(Nd4j.getBlasWrapper().dot(word2Vec.getWordVectorMatrix("day"),word2Vec.getWordVectorMatrix("year")));
 
         sc.stop();
 

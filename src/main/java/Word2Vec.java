@@ -55,7 +55,7 @@ public class Word2Vec extends WordVectorsImpl {
     public final static String UNK = "UNK";
     protected long seed = 123;
     protected boolean saveVocab = false;
-    protected double minLearningRate = 0.01;
+    protected double minLearningRate = 0;
     protected transient TextVectorizer vectorizer;
     protected int learningRateDecayWords = 10000;
     protected InvertedIndex invertedIndex;

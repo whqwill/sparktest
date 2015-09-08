@@ -48,7 +48,7 @@ public class W2V {
 
         log.info("Building model....");
         Word2Vec vec = new Word2Vec.Builder()
-                .minWordFrequency(5).iterations(1)
+                .minWordFrequency(5).iterations(10).minLearningRate(0)
                 .layerSize(100).lookupTable(table)
                 .stopWords(new ArrayList<String>())
                 .vocabCache(cache).seed(42)
@@ -86,7 +86,7 @@ public class W2V {
 
 
         log.info("Closest Words:");
-        Collection<String> lst = vec.wordsNearest("day", 10);
+        Collection<String> lst = vec.wordsNearest("day", 40);
 
         System.out.println(lst);
         System.out.println(vec.similarity("day", "year"));
