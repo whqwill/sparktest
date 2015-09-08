@@ -73,8 +73,8 @@ public class FirstIterationFunction
                     alpha - (alpha - minAlpha) * (sentenceCumSumCount / (double) totalWordCount));
             trainSentence(vocabWordsList, currentSentenceAlpha);
         }
-        //for (int i = 0; i < 300; i++)
-        //    indexSyn0VecMap.put(i, syn0.getRow(i));
+        //for (int i = 0; i < 242; i++)
+        //tyyy    indexSyn0VecMap.put(i, syn0.getRow(i));
         return indexSyn0VecMap.entrySet();
     }
 
