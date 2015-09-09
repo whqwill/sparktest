@@ -38,7 +38,7 @@ public class W2V {
         SentenceIterator iter = UimaSentenceIterator.createWithPath(filePath);
         // Split on white spaces in the line to get words
         TokenizerFactory t = new DefaultTokenizerFactory();
-        t.setTokenPreProcessor(new Preprocessor());
+        t.setTokenPreProcessor(new CommonPreprocessor());
 
         InMemoryLookupCache cache = new InMemoryLookupCache();
         WeightLookupTable table = new InMemoryLookupTable.Builder()
@@ -49,7 +49,7 @@ public class W2V {
 
         log.info("Building model....");
         Word2Vec vec = new Word2Vec.Builder()
-                .minWordFrequency(5).iterations(10).minLearningRate(0.025f*0.0001)
+                .minWordFrequency(5).iterations(1).minLearningRate(0.025f*0.0001)
                 .layerSize(100).lookupTable(table)
                 .stopWords(new ArrayList<String>())
                 .vocabCache(cache).seed(42)

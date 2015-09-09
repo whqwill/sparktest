@@ -28,7 +28,7 @@ public class W2Vsparknew {
 
         System.out.println("step 1...");
         // These are all default values for word2vec
-        SparkConf sparkConf = new SparkConf().setMaster("local").setAppName("sparktest");
+        SparkConf sparkConf = new SparkConf().setMaster("local[*]").setAppName("sparktest");
 
         System.out.println("step 2...");
         // Set SparkContext
@@ -57,6 +57,7 @@ public class W2Vsparknew {
                 .setWindow(5)
                 .setAlpha(0.025).setMinAlpha(0)
                 .setIterations(10)
+                .setNumPartitions(1)
                 .setNumWords(5);
 
         System.out.println(word2Vec.getNumWords());

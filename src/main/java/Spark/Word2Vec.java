@@ -1,8 +1,6 @@
 package Spark;
 
-/**
- * Created by hwang on 03.09.15.
- */
+import net.didion.jwnl.data.Word;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -12,7 +10,7 @@ import org.apache.spark.broadcast.Broadcast;
 import org.deeplearning4j.berkeley.Pair;
 import org.deeplearning4j.models.embeddings.inmemory.InMemoryLookupTable;
 import org.deeplearning4j.models.embeddings.wordvectors.WordVectorsImpl;
-import org.deeplearning4j.models.word2vec.Huffman;
+//import org.deeplearning4j.models.word2vec.Huffman;
 import org.deeplearning4j.models.word2vec.VocabWord;
 import org.deeplearning4j.models.word2vec.wordstore.VocabCache;
 //import org.deeplearning4j.spark.models.embeddings.word2vec.FirstIterationFunction;
@@ -50,6 +48,7 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
     private int window = 5;
     private double alpha= 0.025;
     private double minAlpha = 0.0001;
+    private int numPartitions = 1;
     private int iterations = 1;
     private int nGrams = 1;
     private String tokenizer = "org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory";
@@ -112,9 +111,9 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
         Map<String, Object> word2vecVarMap = getWord2vecVarMap();
 
         // Variables to fill in in train
-        final JavaRDD<AtomicLong> sentenceWordsCountRDD;
+        //final JavaRDD<AtomicLong> sentenceWordsCountRDD;
         final JavaRDD<List<VocabWord>> vocabWordListRDD;
-        final JavaPairRDD<List<VocabWord>, Long> vocabWordListSentenceCumSumRDD;
+        //final JavaPairRDD<List<VocabWord>, Long> vocabWordListSentenceCumSumRDD;
         final VocabCache vocabCache;
         final JavaRDD<Long> sentenceCumSumCountRDD;
 
@@ -123,15 +122,15 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
         log.info("Tokenization and building VocabCache ...");
         // Processing every sentence and make a VocabCache which gets fed into a LookupCache
         Broadcast<Map<String, Object>> broadcastTokenizerVarMap = sc.broadcast(tokenizerVarMap);
-        TextPipeline pipeline = new TextPipeline(corpusRDD, broadcastTokenizerVarMap);
+        TextPipeline pipeline = new TextPipeline(corpusRDD.repartition(numPartitions), broadcastTokenizerVarMap);
         pipeline.buildVocabCache();
         pipeline.buildVocabWordListRDD();
 
         // Get total word count and put into word2vec variable map
-        word2vecVarMap.put("totalWordCount", pipeline.getTotalWordCount());
+        word2vecVarMap.put("totalWordCount", pipeline.getTotalWordCount()/numPartitions);
 
         // 2 RDDs: (vocab words list) and (sentence Count).Already cached
-        sentenceWordsCountRDD = pipeline.getSentenceCountRDD();
+        //sentenceWordsCountRDD = pipeline.getSentenceCountRDD();
         vocabWordListRDD = pipeline.getVocabWordListRDD();
 
         // Get vocabCache and broad-casted vocabCache
@@ -145,27 +144,33 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
         huffman.build();
 
         //////////////////////////////////////
-        log.info("Calculating cumulative sum of sentence counts ...");
-        sentenceCumSumCountRDD =  new CountCumSum(sentenceWordsCountRDD).buildCumSum();
+        //log.info("Calculating cumulative sum of sentence counts ...");
+        //sentenceCumSumCountRDD =  (new CountCumSum(sentenceWordsCountRDD).buildCumSum());
 
         //////////////////////////////////////
-        log.info("Mapping to RDD(vocabWordList, cumulative sentence count) ...");
-        vocabWordListSentenceCumSumRDD = vocabWordListRDD.zip(sentenceCumSumCountRDD)
-                .setName("vocabWordListSentenceCumSumRDD").cache();
+        //log.info("Mapping to RDD(vocabWordList, cumulative sentence count) ...");
+        //vocabWordListSentenceCumSumRDD = vocabWordListRDD.zip(sentenceCumSumCountRDD)
+        //        .setName("vocabWordListSentenceCumSumRDD").cache();
+
+        //System.out.println(vocabWordListSentenceCumSumRDD.take(100));
 
         /////////////////////////////////////
-        log.info("Broadcasting word2vec variables to workers ...");
-        Broadcast<Map<String, Object>> word2vecVarMapBroadcast = sc.broadcast(word2vecVarMap);
-        Broadcast<double[]> expTableBroadcast = sc.broadcast(expTable);
-
-
+        //log.info("Broadcasting word2vec variables to workers ...");
+        //Broadcast<Map<String, Object>> word2vecVarMapBroadcast = sc.broadcast(word2vecVarMap);
+        //Broadcast<double[]> expTableBroadcast = sc.broadcast(expTable);
 
         /////////////////////////////////////
         log.info("Training word2vec sentences ...");
-        FlatMapFunction firstIterFunc = new FirstIterationFunction(word2vecVarMapBroadcast, expTableBroadcast);
+
+        //INDArray s0 = Nd4j.rand(new int[]{vocabCache.numWords(), vectorLength} , Nd4j.getRandom()).subi(0.5).divi(vectorLength);
+        //INDArray s1 = Nd4j.zeros(vocabCache.numWords(), vectorLength);
+
+        INDArray s0 = Nd4j.rand(seed, new int[]{vocabCache.numWords() ,vectorLength}).subi(0.5).divi(vectorLength);
+        INDArray s1 = Nd4j.zeros(vocabCache.numWords()-1, vectorLength);
+        FlatMapFunction firstIterFunc = new FirstIterationFunction(word2vecVarMap, expTable, sc.broadcast(s0), sc.broadcast(s1));
         @SuppressWarnings("unchecked")
         JavaRDD< Pair<Integer, INDArray> > indexSyn0UpdateEntryRDD =
-                vocabWordListSentenceCumSumRDD.mapPartitions(firstIterFunc)
+                vocabWordListRDD.mapPartitions(firstIterFunc)
                         .map(new MapToPairFunction());
 
         // Get all the syn0 updates into a list in driver
@@ -174,17 +179,17 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
         // Instantiate syn0
         INDArray syn0 = Nd4j.create(vocabCache.numWords(), vectorLength);
 
+        int[] count_syn0 = new int[vocabCache.numWords()];
+
         // Updating syn0
         for (Pair<Integer, INDArray> syn0UpdateEntry : syn0UpdateEntries) {
             syn0.getRow(syn0UpdateEntry.getFirst()).addi(syn0UpdateEntry.getSecond());
+            count_syn0[syn0UpdateEntry.getFirst()]++;
         }
 
-        /*for (int i = 0; i < syn0.rows(); i++) {
-            double tmp = syn0.getRow(i).sumNumber().doubleValue();
-            syn0.getRow(i).divi(Math.abs(tmp));
-        }*/
-
-        int a = 0;
+        /*for (int i = 0; i < syn0.rows(); i++)
+            if (count_syn0[i] > 0)
+                syn0.getRow(i).divi(count_syn0[i]);*/
 
         vocab = vocabCache;
         InMemoryLookupTable inMemoryLookupTable = new InMemoryLookupTable();
@@ -245,6 +250,11 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
 
     public Word2Vec setAlpha(double alpha) {
         this.alpha = alpha;
+        return this;
+    }
+
+    public Word2Vec setNumPartitions(int numPartitions) {
+        this.numPartitions = numPartitions;
         return this;
     }
 
