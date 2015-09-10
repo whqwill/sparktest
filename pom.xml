@@ -12,7 +12,7 @@
         <nd4j.version>0.4-rc0</nd4j.version>
         <dl4j.version>0.4-rc0</dl4j.version>
         <canova.version>0.0.0.5</canova.version>
-        <spark.version>1.4.1</spark.version>
+        <spark.version>1.5.0</spark.version>
     </properties>
 
     <dependencies>

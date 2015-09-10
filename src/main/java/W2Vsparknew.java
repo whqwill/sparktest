@@ -56,8 +56,8 @@ public class W2Vsparknew {
                 .setVectorLength(100)
                 .setWindow(5)
                 .setAlpha(0.025).setMinAlpha(0)
-                .setIterations(10)
-                .setNumPartitions(1)
+                .setIterations(2)
+                .setNumPartitions(2)
                 .setNumWords(5);
 
         System.out.println(word2Vec.getNumWords());

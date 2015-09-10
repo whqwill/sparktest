@@ -32,13 +32,13 @@ public class FirstIterationFunction
     private long seed;
     private int maxExp;
     private double[] expTable;
+    private Broadcast<Map<Integer, INDArray>> syn0;
     private Map<Integer, INDArray> indexSyn0VecMap;
-    private Map<Integer, INDArray> pointSyn1VecMap;
-    private Broadcast<INDArray> syn0, syn1;
     private AtomicLong nextRandom = new AtomicLong(5);
+    private int vecNum;
 
     public FirstIterationFunction(Map<String, Object> word2vecVarMap,
-                                  double[] expTable, Broadcast<INDArray> syn0, Broadcast<INDArray> syn1) {
+                                  double[] expTable, Broadcast<Map<Integer, INDArray>> syn0) {
 
         this.expTable = expTable;
         this.vectorLength = Integer.parseInt(word2vecVarMap.get("vectorLength").toString());
@@ -50,24 +50,13 @@ public class FirstIterationFunction
         this.totalWordCount = Long.parseLong(word2vecVarMap.get("totalWordCount").toString());
         this.seed = Long.parseLong(word2vecVarMap.get("seed").toString());
         this.maxExp = Integer.parseInt(word2vecVarMap.get("maxExp").toString());
-        this.indexSyn0VecMap = new HashMap();
-        this.pointSyn1VecMap = new HashMap();
+        this.vecNum = Integer.parseInt(word2vecVarMap.get("vecNum").toString());
         this.syn0 = syn0;
-        this.syn1 = syn1;
     }
 
     @Override
     public Iterable<Entry<Integer, INDArray>> call(Iterator<List<VocabWord>> iter) {
-        INDArray syn0 = this.syn0.getValue();
-        INDArray syn1 = this.syn1.getValue();
-        /*for (int i = 0; i < syn0.rows(); i++)
-            this.indexSyn0VecMap.put(i, syn0.getRow(i));
-        for (int i = 0; i < syn1.rows(); i++)
-            this.pointSyn1VecMap.put(i, syn1.getRow(i));*/
-        for (int i = 0; i < syn0.rows(); i++)
-            this.indexSyn0VecMap.put(i, getRandomSyn0Vec(vectorLength));
-        for (int i = 0; i < syn1.rows(); i++)
-            this.pointSyn1VecMap.put(i, Nd4j.zeros(1, vectorLength));
+        indexSyn0VecMap = syn0.value();
         Long last = 0L;
         Long now = 0L;
         while (iter.hasNext()) {
@@ -137,7 +126,7 @@ public class FirstIterationFunction
         //
         for (int i = 0; i < currentWord.getCodeLength(); i++) {
             int code = currentWord.getCodes().get(i);
-            int point = currentWord.getPoints().get(i);
+            int point = currentWord.getPoints().get(i)+vecNum;
 
             if (currentWord.getIndex() == 47) {
                 int a = 0;
@@ -152,11 +141,11 @@ public class FirstIterationFunction
 
             // Point to
             INDArray syn1VecCurrentIndex;// = pointSyn1VecMap.get(point);
-            if (pointSyn1VecMap.containsKey(point)) {
-                syn1VecCurrentIndex = pointSyn1VecMap.get(point);
+            if (indexSyn0VecMap.containsKey(point)) {
+                syn1VecCurrentIndex = indexSyn0VecMap.get(point);
             } else {
                 syn1VecCurrentIndex = Nd4j.zeros(1, vectorLength); // 1 row of vector length of zeros
-                pointSyn1VecMap.put(point, syn1VecCurrentIndex);
+                indexSyn0VecMap.put(point, syn1VecCurrentIndex);
             }
 
             if (point == 100) {
@@ -179,7 +168,7 @@ public class FirstIterationFunction
             Nd4j.getBlasWrapper().level1().axpy(vectorLength, g, syn1VecCurrentIndex, neu1e);
             Nd4j.getBlasWrapper().level1().axpy(vectorLength, g, randomSyn0Vec, syn1VecCurrentIndex);
 
-            pointSyn1VecMap.put(point, syn1VecCurrentIndex);
+            indexSyn0VecMap.put(point, syn1VecCurrentIndex);
 
             int a = 0;
         }

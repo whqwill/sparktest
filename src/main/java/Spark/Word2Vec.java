@@ -6,6 +6,9 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.deeplearning4j.berkeley.Pair;
 import org.deeplearning4j.models.embeddings.inmemory.InMemoryLookupTable;
@@ -21,6 +24,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Tuple2;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -165,31 +169,68 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
         //INDArray s0 = Nd4j.rand(new int[]{vocabCache.numWords(), vectorLength} , Nd4j.getRandom()).subi(0.5).divi(vectorLength);
         //INDArray s1 = Nd4j.zeros(vocabCache.numWords(), vectorLength);
 
-        INDArray s0 = Nd4j.rand(seed, new int[]{vocabCache.numWords() ,vectorLength}).subi(0.5).divi(vectorLength);
-        INDArray s1 = Nd4j.zeros(vocabCache.numWords()-1, vectorLength);
-        FlatMapFunction firstIterFunc = new FirstIterationFunction(word2vecVarMap, expTable, sc.broadcast(s0), sc.broadcast(s1));
-        @SuppressWarnings("unchecked")
-        JavaRDD< Pair<Integer, INDArray> > indexSyn0UpdateEntryRDD =
-                vocabWordListRDD.mapPartitions(firstIterFunc)
-                        .map(new MapToPairFunction());
+        word2vecVarMap.put("vecNum", vocabCache.numWords());
 
-        // Get all the syn0 updates into a list in driver
-        List<Pair<Integer, INDArray>> syn0UpdateEntries = indexSyn0UpdateEntryRDD.collect();
+        Map<Integer, INDArray> s0 = new HashMap();
+
+        //test
+        INDArray a = getRandomSyn0Vec(20);
+        INDArray b = getRandomSyn0Vec(20);
+        INDArray d = a.addi(b);
+        INDArray c = a;
+        c.addi(b);
+        
+        int e = 0;
+
+
+
+        for (int i = 0; i < iterations; i++) {
+            System.out.println("iteration: "+i);
+
+            word2vecVarMap.put("alpha", alpha-(alpha-minAlpha)/iterations*i);
+            word2vecVarMap.put("minAlpha", alpha-(alpha-minAlpha)/iterations*(i+1));
+
+            FlatMapFunction firstIterationFunction = new FirstIterationFunction(word2vecVarMap, expTable, sc.broadcast(s0));
+
+            class MapPairFunction implements PairFunction<Map.Entry<Integer, INDArray>, Integer, INDArray> {
+                public Tuple2<Integer, INDArray> call(Map.Entry<Integer, INDArray> pair) {
+                    return new Tuple2(pair.getKey(), pair.getValue());
+                }
+            }
+
+            class Sum implements Function2<INDArray, INDArray, INDArray> {
+                public INDArray call(INDArray a, INDArray b) {
+                    return a.add(b);
+                }
+            }
+
+            //@SuppressWarnings("unchecked")
+            JavaPairRDD<Integer, INDArray> indexSyn0UpdateEntryRDD =
+                    vocabWordListRDD.mapPartitions(firstIterationFunction).mapToPair(new MapPairFunction()).cache();
+            Map<Integer, Object> count = indexSyn0UpdateEntryRDD.countByKey();
+            indexSyn0UpdateEntryRDD = indexSyn0UpdateEntryRDD.reduceByKey(new Sum());
+
+            // Get all the syn0 updates into a list in driver
+            List<Tuple2<Integer, INDArray>> syn0UpdateEntries = indexSyn0UpdateEntryRDD.collect();
+
+            // Updating syn0
+            s0 = new HashMap();
+            for (Tuple2<Integer, INDArray> syn0UpdateEntry : syn0UpdateEntries) {
+                //s0.put(syn0UpdateEntry._1, syn0UpdateEntry._2.div(Integer.parseInt(count.get(syn0UpdateEntry._1).toString())));
+                s0.put(syn0UpdateEntry._1, syn0UpdateEntry._2);
+                //System.out.println(Integer.parseInt(count.get(syn0UpdateEntry._1).toString()));
+            }
+        }
 
         // Instantiate syn0
         INDArray syn0 = Nd4j.create(vocabCache.numWords(), vectorLength);
 
-        int[] count_syn0 = new int[vocabCache.numWords()];
-
-        // Updating syn0
-        for (Pair<Integer, INDArray> syn0UpdateEntry : syn0UpdateEntries) {
-            syn0.getRow(syn0UpdateEntry.getFirst()).addi(syn0UpdateEntry.getSecond());
-            count_syn0[syn0UpdateEntry.getFirst()]++;
+        for (Map.Entry<Integer, INDArray> syn0UpdateEntry : s0.entrySet()) {
+            if (syn0UpdateEntry.getKey() < vocabCache.numWords()) {
+                syn0.getRow(syn0UpdateEntry.getKey()).addi(syn0UpdateEntry.getValue());
+                //count_syn0[syn0UpdateEntry._1]++;
+            }
         }
-
-        /*for (int i = 0; i < syn0.rows(); i++)
-            if (count_syn0[i] > 0)
-                syn0.getRow(i).divi(count_syn0[i]);*/
 
         vocab = vocabCache;
         InMemoryLookupTable inMemoryLookupTable = new InMemoryLookupTable();
@@ -197,6 +238,9 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
         inMemoryLookupTable.setVectorLength(vectorLength);
         inMemoryLookupTable.setSyn0(syn0);
         lookupTable = inMemoryLookupTable;
+    }
+    public INDArray getRandomSyn0Vec(int vectorLength) {
+        return Nd4j.rand(seed, new int[]{1 ,vectorLength}).subi(0.5).divi(vectorLength);
     }
 
     public int getVectorLength() {
