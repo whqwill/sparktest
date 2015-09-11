@@ -121,6 +121,7 @@ public class FirstIterationFunction
         } else {
             randomSyn0Vec = getRandomSyn0Vec(vectorLength); // 1 row of vector length of zeros
             indexSyn0VecMap.put(w2.getIndex(), randomSyn0Vec);
+
         }
 
         //
@@ -182,6 +183,6 @@ public class FirstIterationFunction
     }
 
     public INDArray getRandomSyn0Vec(int vectorLength) {
-        return Nd4j.rand(seed, new int[]{1 ,vectorLength}).subi(0.5).divi(vectorLength);
+        return Nd4j.rand(seed, new int[]{1 ,vectorLength}).subi(0.5D).divi(vectorLength);
     }
 }

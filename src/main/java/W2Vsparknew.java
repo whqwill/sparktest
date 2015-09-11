@@ -48,7 +48,8 @@ public class W2Vsparknew {
         Word2Vec word2Vec = new Word2Vec()
                 .setnGrams(1)
                 .setTokenizer("org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory")
-                .setTokenPreprocessor("org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor")
+                .setTokenPreprocessor("Preprocessor")
+                //.setTokenPreprocessor("org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor")
                 .setRemoveStop(false)
                 .setSeed(42L)
                 .setNegative(0)
@@ -56,8 +57,8 @@ public class W2Vsparknew {
                 .setVectorLength(100)
                 .setWindow(5)
                 .setAlpha(0.025).setMinAlpha(0)
-                .setIterations(2)
-                .setNumPartitions(2)
+                .setIterations(10)
+                .setNumPartitions(4)
                 .setNumWords(5);
 
         System.out.println(word2Vec.getNumWords());

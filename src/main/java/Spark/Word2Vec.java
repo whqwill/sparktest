@@ -173,17 +173,6 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
 
         Map<Integer, INDArray> s0 = new HashMap();
 
-        //test
-        INDArray a = getRandomSyn0Vec(20);
-        INDArray b = getRandomSyn0Vec(20);
-        INDArray d = a.addi(b);
-        INDArray c = a;
-        c.addi(b);
-        
-        int e = 0;
-
-
-
         for (int i = 0; i < iterations; i++) {
             System.out.println("iteration: "+i);
 
@@ -215,20 +204,21 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
 
             // Updating syn0
             s0 = new HashMap();
+
             for (Tuple2<Integer, INDArray> syn0UpdateEntry : syn0UpdateEntries) {
-                //s0.put(syn0UpdateEntry._1, syn0UpdateEntry._2.div(Integer.parseInt(count.get(syn0UpdateEntry._1).toString())));
-                s0.put(syn0UpdateEntry._1, syn0UpdateEntry._2);
-                //System.out.println(Integer.parseInt(count.get(syn0UpdateEntry._1).toString()));
+                int cc = Integer.parseInt(count.get(syn0UpdateEntry._1).toString());
+                //int cc = 1;
+                if (cc > 0) {
+                    INDArray tmp = Nd4j.zeros(1, vectorLength).addi(syn0UpdateEntry._2).divi(cc);
+                    s0.put(syn0UpdateEntry._1, tmp);
+                }
             }
         }
 
-        // Instantiate syn0
-        INDArray syn0 = Nd4j.create(vocabCache.numWords(), vectorLength);
-
-        for (Map.Entry<Integer, INDArray> syn0UpdateEntry : s0.entrySet()) {
-            if (syn0UpdateEntry.getKey() < vocabCache.numWords()) {
-                syn0.getRow(syn0UpdateEntry.getKey()).addi(syn0UpdateEntry.getValue());
-                //count_syn0[syn0UpdateEntry._1]++;
+        INDArray syn0 = Nd4j.zeros(vocabCache.numWords(), vectorLength);
+        for (Map.Entry<Integer, INDArray> ss: s0.entrySet()) {
+            if (ss.getKey() < vocabCache.numWords()) {
+                syn0.getRow(ss.getKey()).addi(ss.getValue());
             }
         }
 
