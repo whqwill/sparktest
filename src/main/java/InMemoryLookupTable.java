@@ -40,6 +40,7 @@ public class InMemoryLookupTable implements WeightLookupTable {
     protected VocabCache vocab;
     protected Map<Integer,INDArray> codes = new ConcurrentHashMap();
     private Map<Integer, INDArray> indexSyn0VecMap = new HashMap();
+    
 
     public InMemoryLookupTable() {}
 
@@ -65,6 +66,7 @@ public class InMemoryLookupTable implements WeightLookupTable {
         this.rng = gen;
         this.negative = negative;
         initExpTable();
+        int a = 0;
     }
 
     public double[] getExpTable() {
@@ -168,6 +170,7 @@ public class InMemoryLookupTable implements WeightLookupTable {
             double tmp =   FastMath.exp((i / (double) expTable.length * 2 - 1) * MAX_EXP);
             expTable[i]  = tmp / (tmp + 1.0);
         }
+        int a = 0;
     }
 
 

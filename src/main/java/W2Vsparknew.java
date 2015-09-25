@@ -36,7 +36,8 @@ public class W2Vsparknew {
 
         System.out.println("step 3...");
         // Path of data
-        String dataPath = new ClassPathResource("raw_sentences.txt").getFile().getAbsolutePath();
+        //String dataPath = new ClassPathResource("raw_sentences.txt").getFile().getAbsolutePath();
+        String dataPath = new ClassPathResource("text8").getFile().getAbsolutePath();
         //        String dataPath = new ClassPathResource("spark_word2vec_test.txt").getFile().getAbsolutePath();
 
         System.out.println("step 4...");
@@ -57,7 +58,7 @@ public class W2Vsparknew {
                 .setVectorLength(100)
                 .setWindow(5)
                 .setAlpha(0.025).setMinAlpha(0)
-                .setIterations(10)
+                .setIterations(1)
                 .setNumPartitions(4)
                 .setNumWords(5);
 
@@ -87,8 +88,8 @@ public class W2Vsparknew {
             writer.write(tp.getKey()+" "+String.valueOf(tp.getValue())+"\n");
         }
         writer.close();
-
         System.out.println(word2Vec.getNumWords());
+
         System.out.println("step 7...");
         Collection<String> words = word2Vec.wordsNearest("day", 40);
         System.out.println(words);
