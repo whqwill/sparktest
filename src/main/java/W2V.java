@@ -31,7 +31,8 @@ public class W2V {
     public static void main(String[] args) throws Exception {
         long begintime = System.currentTimeMillis();
 
-        String filePath = new ClassPathResource("raw_sentences.txt").getFile().getAbsolutePath();
+        //String filePath = new ClassPathResource("raw_sentences.txt").getFile().getAbsolutePath();
+        String filePath = new ClassPathResource("text8").getFile().getAbsolutePath();
 
         log.info("Load & Vectorize Sentences....");
         // Strip white space before and after for each line

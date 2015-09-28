@@ -2,6 +2,7 @@ package Spark;
 
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.deeplearning4j.berkeley.Pair;
 import org.deeplearning4j.models.word2vec.VocabWord;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -32,7 +33,7 @@ public class FirstIterationFunction
     private long seed;
     private int maxExp;
     private double[] expTable;
-    private Broadcast<Map<Integer, INDArray>> syn0;
+    private Broadcast<Map<Pair<Integer,Integer>, INDArray>> syn0;
     
     private Map<Integer, INDArray> indexSyn0VecMap;
     private AtomicLong nextRandom = new AtomicLong(5);
@@ -40,7 +41,7 @@ public class FirstIterationFunction
 
 
     public FirstIterationFunction(Map<String, Object> word2vecVarMap,
-                                  double[] expTable, Broadcast<Map<Integer, INDArray>> syn0) {
+                                  double[] expTable, Broadcast<Map<Pair<Integer,Integer>, INDArray>> syn0) {
 
         this.expTable = expTable;
         this.vectorLength = Integer.parseInt(word2vecVarMap.get("vectorLength").toString());

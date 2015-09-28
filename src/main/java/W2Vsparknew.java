@@ -36,8 +36,8 @@ public class W2Vsparknew {
 
         System.out.println("step 3...");
         // Path of data
-        //String dataPath = new ClassPathResource("raw_sentences.txt").getFile().getAbsolutePath();
-        String dataPath = new ClassPathResource("text8").getFile().getAbsolutePath();
+        String dataPath = new ClassPathResource("raw_sentences.txt").getFile().getAbsolutePath();
+        //String dataPath = new ClassPathResource("text8").getFile().getAbsolutePath();
         //        String dataPath = new ClassPathResource("spark_word2vec_test.txt").getFile().getAbsolutePath();
 
         System.out.println("step 4...");

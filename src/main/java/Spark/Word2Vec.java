@@ -171,7 +171,14 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
 
         word2vecVarMap.put("vecNum", vocabCache.numWords());
 
-        Map<Integer, INDArray> s0 = new HashMap();
+        //Map<Tuple2<Integer,Integer>, INDArray> s0 = new HashMap();
+        Map<Pair<Integer,Integer>, INDArray> s0 = new HashMap();
+        for (int i = 0; i < vocabCache.numWords(); i++) {
+            s0.put(new Pair(i,0), getRandomSyn0Vec(vectorLength));
+        }
+        for (int i = vocabCache.numWords(); i < vocabCache.numWords()*2-1; i++) {
+            s0.put(new Pair(i,0), Nd4j.zeros(1, vectorLength));
+        }
 
         for (int i = 0; i < iterations; i++) {
             System.out.println("iteration: "+i);
@@ -210,15 +217,15 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
                 //int cc = 1;
                 if (cc > 0) {
                     INDArray tmp = Nd4j.zeros(1, vectorLength).addi(syn0UpdateEntry._2).divi(cc);
-                    s0.put(syn0UpdateEntry._1, tmp);
+                    s0.put(new Pair(syn0UpdateEntry._1,0), tmp);
                 }
             }
         }
 
         INDArray syn0 = Nd4j.zeros(vocabCache.numWords(), vectorLength);
-        for (Map.Entry<Integer, INDArray> ss: s0.entrySet()) {
-            if (ss.getKey() < vocabCache.numWords()) {
-                syn0.getRow(ss.getKey()).addi(ss.getValue());
+        for (Map.Entry<Pair<Integer,Integer>, INDArray> ss: s0.entrySet()) {
+            if (ss.getKey().getFirst() < vocabCache.numWords()) {
+                syn0.getRow(ss.getKey().getFirst()).addi(ss.getValue());
             }
         }
 
