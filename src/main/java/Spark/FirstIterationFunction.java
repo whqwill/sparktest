@@ -34,6 +34,7 @@ public class FirstIterationFunction
     private int maxExp;
     private double[] expTable;
     private Broadcast<Map<Pair<Integer,Integer>, INDArray>> syn0;
+    private int K;
     
     private Map<Pair<Integer,Integer>, INDArray> indexSyn0VecMap;
     private AtomicLong nextRandom = new AtomicLong(5);
@@ -54,6 +55,7 @@ public class FirstIterationFunction
         this.seed = Long.parseLong(word2vecVarMap.get("seed").toString());
         this.maxExp = Integer.parseInt(word2vecVarMap.get("maxExp").toString());
         this.vecNum = Integer.parseInt(word2vecVarMap.get("vecNum").toString());
+        this.K = Integer.parseInt(word2vecVarMap.get("K").toString());
         this.syn0 = syn0;
     }
 
@@ -116,57 +118,39 @@ public class FirstIterationFunction
         // error for current word and context
         INDArray neu1e = Nd4j.create(vectorLength);
 
-        // First iteration Syn0 is random numbers
-        INDArray syn0Vec; //= indexSyn0VecMap.get(w2.getIndex());
-        Pair<Integer,Integer> w2Index = new Pair(w2.getIndex(),0);
-        if (indexSyn0VecMap.containsKey(w2Index)) {
-            syn0Vec = indexSyn0VecMap.get(w2Index);
-        } else {
-            syn0Vec = getRandomSyn0Vec(vectorLength); // 1 row of vector length of zeros
-            indexSyn0VecMap.put(w2Index, syn0Vec);
+        Pair<Integer,Integer> w2Index = null;
+        double maxScore = -1;
+        for (int k = 0; k < K; k++) {
+            Pair<Integer,Integer> w2IndexK = new Pair(w2.getIndex(),k);
+            INDArray syn0Vec = indexSyn0VecMap.get(w2IndexK);
+            double score = 1;
+            for (int i = 0; i < w1.getCodeLength(); i++) {
+                int point = w1.getPoints().get(i) + vecNum;
+                Pair<Integer,Integer> pointIndex = new Pair(point,0);
+                INDArray syn1Vec = indexSyn0VecMap.get(pointIndex);
+                double dot = Nd4j.getBlasWrapper().level1().dot(vectorLength, 1.0, syn0Vec, syn1Vec);
+                if (dot < -maxExp || dot >= maxExp)
+                    continue;
+                int idx = (int) ((dot + maxExp) * ((double) expTable.length / maxExp / 2.0));
+                //score
+                double f = expTable[idx];
+                score *= f;
+            }
+            if (score > maxScore) {
+                maxScore = score;
+                w2Index = w2IndexK;
+            }
         }
 
-        /*double score = 1;
-        for (int i = 0; i < currentWord.getCodeLength(); i++) {
-            int point = currentWord.getPoints().get(i)+vecNum;
-
-            // Point to
-            INDArray syn1VecCurrentIndex;// = pointSyn1VecMap.get(point);
-            if (indexSyn0VecMap.containsKey(point)) {
-                syn1VecCurrentIndex = indexSyn0VecMap.get(point);
-            } else {
-                syn1VecCurrentIndex = Nd4j.zeros(1, vectorLength); // 1 row of vector length of zeros
-                indexSyn0VecMap.put(point, syn1VecCurrentIndex);
-            }
-
-            // Dot product of Syn0 and Syn1 vecs
-            double dot = Nd4j.getBlasWrapper().level1().dot(vectorLength, 1.0, randomSyn0Vec, syn1VecCurrentIndex);
-
-            int idx = (int) ((dot + maxExp) * ((double) expTable.length / maxExp / 2.0));
-
-            if (idx >= expTable.length)
-                idx = expTable.length-1;
-            if (idx < 0)
-                idx = 0;
-
-            score *= expTable[idx];
-        }*/
-
-
+        INDArray syn0Vec = indexSyn0VecMap.get(w2Index);
         //
         for (int i = 0; i < w1.getCodeLength(); i++) {
             int code = w1.getCodes().get(i);
             int point = w1.getPoints().get(i)+vecNum;
 
             // Point to
-            INDArray syn1Vec;// = pointSyn1VecMap.get(point);
             Pair<Integer,Integer> pointIndex = new Pair(point,0);
-            if (indexSyn0VecMap.containsKey(pointIndex)) {
-                syn1Vec = indexSyn0VecMap.get(pointIndex);
-            } else {
-                syn1Vec = Nd4j.zeros(1, vectorLength); // 1 row of vector length of zeros
-                indexSyn0VecMap.put(pointIndex, syn1Vec);
-            }
+            INDArray syn1Vec = indexSyn0VecMap.get(pointIndex);
 
             // Dot product of Syn0 and Syn1 vecs
             double dot = Nd4j.getBlasWrapper().level1().dot(vectorLength, 1.0, syn0Vec, syn1Vec);
@@ -176,22 +160,15 @@ public class FirstIterationFunction
 
             int idx = (int) ((dot + maxExp) * ((double) expTable.length / maxExp / 2.0));
 
-            /*if (idx >= expTable.length)
-                idx = expTable.length-1;
-            if (idx < 0)
-                idx = 0;*/
-
             //score
             double f = expTable[idx];
             //gradient
             double g = (1 - code - f) * (useAdaGrad ? w1.getGradient(i, currentSentenceAlpha) : currentSentenceAlpha);
 
-
             Nd4j.getBlasWrapper().level1().axpy(vectorLength, g, syn1Vec, neu1e);
             Nd4j.getBlasWrapper().level1().axpy(vectorLength, g, syn0Vec, syn1Vec);
 
             indexSyn0VecMap.put(pointIndex, syn1Vec);
-
         }
 
         // Updated the Syn0 vector based on gradient. Syn0 is not random anymore.
@@ -199,9 +176,5 @@ public class FirstIterationFunction
 
         indexSyn0VecMap.put(w2Index, syn0Vec);
 
-    }
-
-    public INDArray getRandomSyn0Vec(int vectorLength) {
-        return Nd4j.rand(seed, new int[]{1 ,vectorLength}).subi(0.5D).divi(vectorLength);
     }
 }

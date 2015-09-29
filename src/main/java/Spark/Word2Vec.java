@@ -59,6 +59,7 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
     private String tokenPreprocessor = "org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor";
     private boolean removeStop = false;
     private long seed = 42L;
+    private int K = 3;
 
     // Constructor to take InMemoryLookupCache table from an already trained model
     public Word2Vec(INDArray trainedSyn1) {
@@ -100,6 +101,7 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
             put("iterations", iterations);
             put("seed", seed);
             put("maxExp", MAX_EXP);
+            put("K", K);
         }};
     }
 
@@ -147,34 +149,17 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
         Huffman huffman = new Huffman(vocabCache.vocabWords());
         huffman.build();
 
-        //////////////////////////////////////
-        //log.info("Calculating cumulative sum of sentence counts ...");
-        //sentenceCumSumCountRDD =  (new CountCumSum(sentenceWordsCountRDD).buildCumSum());
-
-        //////////////////////////////////////
-        //log.info("Mapping to RDD(vocabWordList, cumulative sentence count) ...");
-        //vocabWordListSentenceCumSumRDD = vocabWordListRDD.zip(sentenceCumSumCountRDD)
-        //        .setName("vocabWordListSentenceCumSumRDD").cache();
-
-        //System.out.println(vocabWordListSentenceCumSumRDD.take(100));
-
-        /////////////////////////////////////
-        //log.info("Broadcasting word2vec variables to workers ...");
-        //Broadcast<Map<String, Object>> word2vecVarMapBroadcast = sc.broadcast(word2vecVarMap);
-        //Broadcast<double[]> expTableBroadcast = sc.broadcast(expTable);
-
         /////////////////////////////////////
         log.info("Training word2vec sentences ...");
-
-        //INDArray s0 = Nd4j.rand(new int[]{vocabCache.numWords(), vectorLength} , Nd4j.getRandom()).subi(0.5).divi(vectorLength);
-        //INDArray s1 = Nd4j.zeros(vocabCache.numWords(), vectorLength);
 
         word2vecVarMap.put("vecNum", vocabCache.numWords());
 
         //Map<Tuple2<Integer,Integer>, INDArray> s0 = new HashMap();
         Map<Pair<Integer,Integer>, INDArray> s0 = new HashMap();
-        for (int i = 0; i < vocabCache.numWords(); i++) {
-            s0.put(new Pair(i,0), getRandomSyn0Vec(vectorLength));
+        for (int k = 0; k < K; k++) {
+            for (int i = 0; i < vocabCache.numWords(); i++) {
+                s0.put(new Pair(i, k), getRandomSyn0Vec(vectorLength));
+            }
         }
         for (int i = vocabCache.numWords(); i < vocabCache.numWords()*2-1; i++) {
             s0.put(new Pair(i,0), Nd4j.zeros(1, vectorLength));
@@ -211,7 +196,6 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
 
             // Updating syn0
             s0 = new HashMap();
-
             for (Tuple2<Pair<Integer,Integer>, INDArray> syn0UpdateEntry : syn0UpdateEntries) {
                 int cc = Integer.parseInt(count.get(syn0UpdateEntry._1).toString());
                 //int cc = 1;
@@ -222,7 +206,7 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
             }
         }
 
-        INDArray syn0 = Nd4j.zeros(vocabCache.numWords(), vectorLength);
+        INDArray syn0 = Nd4j.zeros(vocabCache.numWords()*K, vectorLength);
         for (Map.Entry<Pair<Integer,Integer>, INDArray> ss: s0.entrySet()) {
             if (ss.getKey().getFirst() < vocabCache.numWords()) {
                 syn0.getRow(ss.getKey().getFirst()).addi(ss.getValue());
