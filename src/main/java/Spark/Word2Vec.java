@@ -201,23 +201,23 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
             }
 
             //@SuppressWarnings("unchecked")
-            JavaPairRDD<Integer, INDArray> indexSyn0UpdateEntryRDD =
+            JavaPairRDD<Pair<Integer,Integer>, INDArray> indexSyn0UpdateEntryRDD =
                     vocabWordListRDD.mapPartitions(firstIterationFunction).mapToPair(new MapPairFunction()).cache();
-            Map<Integer, Object> count = indexSyn0UpdateEntryRDD.countByKey();
+            Map<Pair<Integer,Integer>, Object> count = indexSyn0UpdateEntryRDD.countByKey();
             indexSyn0UpdateEntryRDD = indexSyn0UpdateEntryRDD.reduceByKey(new Sum());
 
             // Get all the syn0 updates into a list in driver
-            List<Tuple2<Integer, INDArray>> syn0UpdateEntries = indexSyn0UpdateEntryRDD.collect();
+            List<Tuple2<Pair<Integer,Integer>, INDArray>> syn0UpdateEntries = indexSyn0UpdateEntryRDD.collect();
 
             // Updating syn0
             s0 = new HashMap();
 
-            for (Tuple2<Integer, INDArray> syn0UpdateEntry : syn0UpdateEntries) {
+            for (Tuple2<Pair<Integer,Integer>, INDArray> syn0UpdateEntry : syn0UpdateEntries) {
                 int cc = Integer.parseInt(count.get(syn0UpdateEntry._1).toString());
                 //int cc = 1;
                 if (cc > 0) {
                     INDArray tmp = Nd4j.zeros(1, vectorLength).addi(syn0UpdateEntry._2).divi(cc);
-                    s0.put(new Pair(syn0UpdateEntry._1,0), tmp);
+                    s0.put(syn0UpdateEntry._1, tmp);
                 }
             }
         }
