@@ -22,14 +22,13 @@ import org.deeplearning4j.spark.text.functions.CountCumSum;
 import org.deeplearning4j.spark.text.functions.TextPipeline;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.ops.transforms.Transforms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -59,7 +58,9 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
     private String tokenPreprocessor = "org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor";
     private boolean removeStop = false;
     private long seed = 42L;
-    private int K = 3;
+    private int K = 1;
+    private VocabCache vocab;
+    private INDArray syn0;
 
     // Constructor to take InMemoryLookupCache table from an already trained model
     public Word2Vec(INDArray trainedSyn1) {
@@ -206,20 +207,50 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
             }
         }
 
-        INDArray syn0 = Nd4j.zeros(vocabCache.numWords()*K, vectorLength);
+        syn0 = Nd4j.zeros(vocabCache.numWords()*K, vectorLength);
         for (Map.Entry<Pair<Integer,Integer>, INDArray> ss: s0.entrySet()) {
             if (ss.getKey().getFirst() < vocabCache.numWords()) {
-                syn0.getRow(ss.getKey().getFirst()).addi(ss.getValue());
+                syn0.getRow(ss.getKey().getSecond()*vocabCache.numWords()+ss.getKey().getFirst()).addi(ss.getValue());
             }
         }
 
         vocab = vocabCache;
-        InMemoryLookupTable inMemoryLookupTable = new InMemoryLookupTable();
-        inMemoryLookupTable.setVocab(vocabCache);
-        inMemoryLookupTable.setVectorLength(vectorLength);
-        inMemoryLookupTable.setSyn0(syn0);
-        lookupTable = inMemoryLookupTable;
+        //InMemoryLookupTable inMemoryLookupTable = new InMemoryLookupTable();
+        //inMemoryLookupTable.setVocab(vocabCache);
+        //inMemoryLookupTable.setVectorLength(vectorLength);
+        //inMemoryLookupTable.setSyn0(syn0);
+        //lookupTable = inMemoryLookupTable;
     }
+
+    public Collection<String> wordsNearest(String word, int k, int n) {
+        INDArray vector = Transforms.unitVec(getWordVectorMatrix(word, k));
+        
+
+    }
+
+    public double similarity(String word, int k1, String word2, int k2) {
+        if (k1 > K || k2 > K)
+            return -1;
+
+        if(word.equals(word2) && k1 == k2)
+            return 1.0;
+
+        INDArray vector = Transforms.unitVec(getWordVectorMatrix(word, k1));
+        INDArray vector2 = Transforms.unitVec(getWordVectorMatrix(word2, k2));
+        if(vector == null || vector2 == null)
+            return -1;
+        return  Nd4j.getBlasWrapper().dot(vector, vector2);
+    }
+
+    public INDArray getWordVectorMatrix(String word, int k) {
+        if(word == null || k > K)
+            return null;
+        int idx = vocab.indexOf(word);
+        if(idx < 0)
+            idx = vocab.indexOf(org.deeplearning4j.models.word2vec.Word2Vec.UNK);
+        return syn0.getRow(vocab.numWords()*k+idx);
+    }
+
     public INDArray getRandomSyn0Vec(int vectorLength) {
         return Nd4j.rand(seed, new int[]{1 ,vectorLength}).subi(0.5).divi(vectorLength);
     }

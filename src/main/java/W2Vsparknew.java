@@ -93,11 +93,11 @@ public class W2Vsparknew {
         System.out.println("step 7...");
         Collection<String> words = word2Vec.wordsNearest("day", 40);
         System.out.println(words);
-        System.out.println(word2Vec.similarity("day", "year"));
-        System.out.println(word2Vec.similarity("day", "should"));
-        System.out.println(word2Vec.similarity("man","king"));
-        System.out.println(word2Vec.similarity("man","you"));
-        System.out.println(word2Vec.similarity("man","woman"));
+        System.out.println(word2Vec.similarity("day", 0, "year", 0));
+        System.out.println(word2Vec.similarity("day", 0, "should", 0));
+        System.out.println(word2Vec.similarity("man", 0, "king", 0));
+        System.out.println(word2Vec.similarity("man", 0, "you", 0));
+        System.out.println(word2Vec.similarity("man", 0, "woman", 0));
         System.out.println(Nd4j.getBlasWrapper().dot(word2Vec.getWordVectorMatrix("day"), word2Vec.getWordVectorMatrix("night")));
         System.out.println(Nd4j.getBlasWrapper().dot(word2Vec.getWordVectorMatrix("day"),word2Vec.getWordVectorMatrix("year")));
 
