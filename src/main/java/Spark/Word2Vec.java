@@ -1,5 +1,6 @@
 package Spark;
 
+import com.google.common.collect.Lists;
 import net.didion.jwnl.data.Word;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author Adam Gibson
  */
-public class Word2Vec extends WordVectorsImpl implements Serializable  {
+public class Word2Vec implements Serializable  {
 
     private INDArray trainedSyn1;
     private static Logger log = LoggerFactory.getLogger(Word2Vec.class);
@@ -58,7 +59,7 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
     private String tokenPreprocessor = "org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor";
     private boolean removeStop = false;
     private long seed = 42L;
-    private int K = 1;
+    private int K = 2;
     private VocabCache vocab;
     private INDArray syn0;
 
@@ -215,17 +216,60 @@ public class Word2Vec extends WordVectorsImpl implements Serializable  {
         }
 
         vocab = vocabCache;
-        //InMemoryLookupTable inMemoryLookupTable = new InMemoryLookupTable();
-        //inMemoryLookupTable.setVocab(vocabCache);
-        //inMemoryLookupTable.setVectorLength(vectorLength);
-        //inMemoryLookupTable.setSyn0(syn0);
-        //lookupTable = inMemoryLookupTable;
+        syn0.diviRowVector(syn0.norm2(1));
     }
 
     public Collection<String> wordsNearest(String word, int k, int n) {
         INDArray vector = Transforms.unitVec(getWordVectorMatrix(word, k));
-        
+        INDArray similarity = vector.mmul(syn0.transpose());
+        List<Double> highToLowSimList = getTopN(similarity, n);
+        List<String> ret = new ArrayList();
 
+        for (int i = 1; i < highToLowSimList.size(); i++) {
+            word = vocab.wordAtIndex(highToLowSimList.get(i).intValue()%vocab.numWords())+"("+highToLowSimList.get(i).intValue()/vocab.numWords()+")";
+            if (word != null && !word.equals("UNK") && !word.equals("STOP")) {
+                ret.add(word);
+                if (ret.size() >= n) {
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    private static class ArrayComparator implements Comparator<Double[]> {
+
+        @Override
+        public int compare(Double[] o1, Double[] o2) {
+            return Double.compare(o1[0], o2[0]);
+        }
+
+    }
+
+    private static List<Double> getTopN(INDArray vec, int N) {
+        ArrayComparator comparator = new ArrayComparator();
+        PriorityQueue<Double[]> queue = new PriorityQueue(vec.rows(), comparator);
+
+        for (int j = 0; j < vec.length(); j++) {
+            final Double[] pair = new Double[]{vec.getDouble(j), (double) j};
+            if (queue.size() < N) {
+                queue.add(pair);
+            } else {
+                Double[] head = queue.peek();
+                if (comparator.compare(pair, head) > 0) {
+                    queue.poll();
+                    queue.add(pair);
+                }
+            }
+        }
+        List<Double> lowToHighSimLst = new ArrayList();
+
+        while (!queue.isEmpty()) {
+            double ind = queue.poll()[1];
+            lowToHighSimLst.add(ind);
+        }
+        return Lists.reverse(lowToHighSimLst);
     }
 
     public double similarity(String word, int k1, String word2, int k2) {

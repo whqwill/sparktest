@@ -36,8 +36,8 @@ public class W2Vsparknew {
 
         System.out.println("step 3...");
         // Path of data
-        String dataPath = new ClassPathResource("raw_sentences.txt").getFile().getAbsolutePath();
-        //String dataPath = new ClassPathResource("text8").getFile().getAbsolutePath();
+        //String dataPath = new ClassPathResource("raw_sentences.txt").getFile().getAbsolutePath();
+        String dataPath = new ClassPathResource("news.txt").getFile().getAbsolutePath();
         //        String dataPath = new ClassPathResource("spark_word2vec_test.txt").getFile().getAbsolutePath();
 
         System.out.println("step 4...");
@@ -49,8 +49,8 @@ public class W2Vsparknew {
         Word2Vec word2Vec = new Word2Vec()
                 .setnGrams(1)
                 .setTokenizer("org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory")
-                .setTokenPreprocessor("Preprocessor")
-                //.setTokenPreprocessor("org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor")
+                //.setTokenPreprocessor("Preprocessor")
+                .setTokenPreprocessor("org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor")
                 .setRemoveStop(false)
                 .setSeed(42L)
                 .setNegative(0)
@@ -66,41 +66,19 @@ public class W2Vsparknew {
         System.out.println("step 6...");
         word2Vec.train(corpus);
 
-        FileWriter writer=new FileWriter("tmp5.txt");
-        Iterator<VocabWord> tmp = word2Vec.vocab().tokens().iterator();
-        while (tmp.hasNext())
-            writer.write(tmp.next().getWord()+"\n");
-        writer.close();
-
-
-
-        writer=new FileWriter("tmp6.txt");
-        tmp = word2Vec.vocab().vocabWords().iterator();
-        while (tmp.hasNext())
-            writer.write(tmp.next().getWord()+"\n");
-        writer.close();
-
-        writer=new FileWriter("tt2.txt");
-        Iterator<Map.Entry<String,Double>> tt = ((InMemoryLookupCache) word2Vec.vocab()).wordFrequencies.entrySet().iterator();
-        while (tt.hasNext())
-        {
-            Map.Entry<String,Double> tp = tt.next();
-            writer.write(tp.getKey()+" "+String.valueOf(tp.getValue())+"\n");
-        }
-        writer.close();
         System.out.println(word2Vec.getNumWords());
 
         System.out.println("step 7...");
-        Collection<String> words = word2Vec.wordsNearest("day", 40);
-        System.out.println(words);
-        System.out.println(word2Vec.similarity("day", 0, "year", 0));
+        Collection<String> words = word2Vec.wordsNearest("bank", 0, 40);
+        System.out.println("bank(0): "+words);
+        words = word2Vec.wordsNearest("bank", 1, 40);
+        System.out.println("bank(1): "+words);
+        /*System.out.println(word2Vec.similarity("day", 0, "year", 0));
         System.out.println(word2Vec.similarity("day", 0, "should", 0));
         System.out.println(word2Vec.similarity("man", 0, "king", 0));
         System.out.println(word2Vec.similarity("man", 0, "you", 0));
         System.out.println(word2Vec.similarity("man", 0, "woman", 0));
-        System.out.println(Nd4j.getBlasWrapper().dot(word2Vec.getWordVectorMatrix("day"), word2Vec.getWordVectorMatrix("night")));
-        System.out.println(Nd4j.getBlasWrapper().dot(word2Vec.getWordVectorMatrix("day"),word2Vec.getWordVectorMatrix("year")));
-
+*/
         sc.stop();
 
         long endtime=System.currentTimeMillis();
