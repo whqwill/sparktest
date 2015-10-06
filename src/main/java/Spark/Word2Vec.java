@@ -18,6 +18,7 @@ import org.deeplearning4j.models.embeddings.wordvectors.WordVectorsImpl;
 import org.deeplearning4j.models.word2vec.VocabWord;
 import org.deeplearning4j.models.word2vec.wordstore.VocabCache;
 //import org.deeplearning4j.spark.models.embeddings.word2vec.FirstIterationFunction;
+import org.deeplearning4j.models.word2vec.wordstore.inmemory.InMemoryLookupCache;
 import org.deeplearning4j.spark.models.embeddings.word2vec.MapToPairFunction;
 import org.deeplearning4j.spark.text.functions.CountCumSum;
 import org.deeplearning4j.spark.text.functions.TextPipeline;
@@ -28,6 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -59,9 +63,10 @@ public class Word2Vec implements Serializable  {
     private String tokenPreprocessor = "org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor";
     private boolean removeStop = false;
     private long seed = 42L;
-    private int K = 2;
+    private int K = 1;
     private VocabCache vocab;
     private INDArray syn0;
+    private String path = "vectors.txt";
 
     // Constructor to take InMemoryLookupCache table from an already trained model
     public Word2Vec(INDArray trainedSyn1) {
@@ -217,6 +222,29 @@ public class Word2Vec implements Serializable  {
 
         vocab = vocabCache;
         syn0.diviRowVector(syn0.norm2(1));
+
+        BufferedWriter write = new BufferedWriter(new FileWriter(new File(path), false));
+        for (int i = 0; i < syn0.rows(); i++) {
+            String word = vocab.wordAtIndex(i%vocab.numWords());
+            if (word == null) {
+                continue;
+            }
+            word = word+"("+i/vocab.numWords()+")";
+            StringBuilder sb = new StringBuilder();
+            sb.append(word.replaceAll(" ", "_"));
+            sb.append(" ");
+            INDArray wordVector = syn0.getRow(i);
+            for (int j = 0; j < wordVector.length(); j++) {
+                sb.append(wordVector.getDouble(j));
+                if (j < wordVector.length() - 1) {
+                    sb.append(" ");
+                }
+            }
+            sb.append("\n");
+            write.write(sb.toString());
+        }
+        write.flush();
+        write.close();
     }
 
     public Collection<String> wordsNearest(String word, int k, int n) {

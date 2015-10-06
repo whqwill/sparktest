@@ -4,6 +4,7 @@
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.VocabWord;
 import org.deeplearning4j.models.word2vec.wordstore.inmemory.InMemoryLookupCache;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -37,7 +38,7 @@ public class W2Vsparknew {
         System.out.println("step 3...");
         // Path of data
         //String dataPath = new ClassPathResource("raw_sentences.txt").getFile().getAbsolutePath();
-        String dataPath = new ClassPathResource("news.txt").getFile().getAbsolutePath();
+        String dataPath = new ClassPathResource("19960820new.txt").getFile().getAbsolutePath();
         //        String dataPath = new ClassPathResource("spark_word2vec_test.txt").getFile().getAbsolutePath();
 
         System.out.println("step 4...");
@@ -58,8 +59,8 @@ public class W2Vsparknew {
                 .setVectorLength(100)
                 .setWindow(5)
                 .setAlpha(0.025).setMinAlpha(0)
-                .setIterations(1)
-                .setNumPartitions(4)
+                .setIterations(5)
+                .setNumPartitions(8)
                 .setNumWords(5);
 
         System.out.println(word2Vec.getNumWords());
@@ -68,11 +69,13 @@ public class W2Vsparknew {
 
         System.out.println(word2Vec.getNumWords());
 
+
         System.out.println("step 7...");
         Collection<String> words = word2Vec.wordsNearest("bank", 0, 40);
         System.out.println("bank(0): "+words);
-        words = word2Vec.wordsNearest("bank", 1, 40);
-        System.out.println("bank(1): "+words);
+        //words = word2Vec.wordsNearest("bank", 1, 40);
+        //System.out.println("bank(1): "+words);
+
         /*System.out.println(word2Vec.similarity("day", 0, "year", 0));
         System.out.println(word2Vec.similarity("day", 0, "should", 0));
         System.out.println(word2Vec.similarity("man", 0, "king", 0));
