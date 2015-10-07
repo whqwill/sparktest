@@ -69,6 +69,8 @@ public class W2Vsparknew {
 
         System.out.println(word2Vec.getNumWords());
 
+        
+
 
         System.out.println("step 7...");
         Collection<String> words = word2Vec.wordsNearest("bank", 0, 40);

@@ -29,10 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.Serializable;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -63,7 +60,7 @@ public class Word2Vec implements Serializable  {
     private String tokenPreprocessor = "org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor";
     private boolean removeStop = false;
     private long seed = 42L;
-    private int K = 1;
+    private int K = 2;
     private VocabCache vocab;
     private INDArray syn0;
     private String path = "vectors.txt";
@@ -247,6 +244,47 @@ public class Word2Vec implements Serializable  {
         write.close();
     }
 
+    public static INDArray readVocab(InMemoryLookupCache vocab, String path) throws IOException{
+        BufferedReader br = new BufferedReader(new FileReader(path));
+        new HashMap();
+        try {
+            while (true) {
+                String line = br.readLine();
+                if (line == null)
+                    break;
+                String[] ss = line.split(" ");
+                String word = ss[0].substring(0,ss[0].length()-3);
+                double[] vector = new double[ss.length-1];
+                for (int i = 1; i < ss.length; i++)
+                    vector[i-1] = Double.parseDouble(ss[i]);
+            }
+        } finally {
+            br.close();
+        }
+        return null;
+    }
+
+    private static void addTokenToVocabCache(InMemoryLookupCache vocab, String stringToken) {
+        // Making string token into actual token if not already an actual token (vocabWord)
+        VocabWord actualToken;
+        if (vocab.hasToken(stringToken)) {
+            actualToken = vocab.tokenFor(stringToken);
+        } else {
+            actualToken = new VocabWord(1, stringToken);
+        }
+
+        // Set the index of the actual token (vocabWord)
+        // Put vocabWord into vocabs in InMemoryVocabCache
+        boolean vocabContainsWord = vocab.containsWord(stringToken);
+        if (!vocabContainsWord) {
+            vocab.addToken(actualToken);
+            int idx = vocab.numWords();
+            actualToken.setIndex(idx);
+            vocab.putVocabWord(stringToken);
+        }
+    }
+
+
     public Collection<String> wordsNearest(String word, int k, int n) {
         INDArray vector = Transforms.unitVec(getWordVectorMatrix(word, k));
         INDArray similarity = vector.mmul(syn0.transpose());
@@ -264,6 +302,36 @@ public class Word2Vec implements Serializable  {
         }
 
         return ret;
+    }
+
+    public static Collection<String> wordsNearest(INDArray syn0, InMemoryLookupCache vocab, String word, int k, int n, int K) {
+
+
+        INDArray vector = Transforms.unitVec(getWordVectorMatrix(syn0, vocab, word, k, K));
+        INDArray similarity = vector.mmul(syn0.transpose());
+        List<Double> highToLowSimList = getTopN(similarity, n);
+        List<String> ret = new ArrayList();
+
+        for (int i = 1; i < highToLowSimList.size(); i++) {
+            word = vocab.wordAtIndex(highToLowSimList.get(i).intValue()%vocab.numWords())+"("+highToLowSimList.get(i).intValue()/vocab.numWords()+")";
+            if (word != null && !word.equals("UNK") && !word.equals("STOP")) {
+                ret.add(word);
+                if (ret.size() >= n) {
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    public static INDArray getWordVectorMatrix(INDArray syn0, InMemoryLookupCache vocab, String word, int k, int K) {
+        if(word == null || k > K)
+            return null;
+        int idx = vocab.indexOf(word);
+        if(idx < 0)
+            idx = vocab.indexOf(org.deeplearning4j.models.word2vec.Word2Vec.UNK);
+        return syn0.getRow(vocab.numWords()*k+idx);
     }
 
     private static class ArrayComparator implements Comparator<Double[]> {
