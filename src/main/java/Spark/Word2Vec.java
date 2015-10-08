@@ -113,6 +113,7 @@ public class Word2Vec implements Serializable  {
     public void train(JavaRDD<String> corpusRDD) throws Exception {
         log.info("Start training ...");
 
+
         // SparkContext
         final JavaSparkContext sc = new JavaSparkContext(corpusRDD.context());
 
@@ -246,17 +247,28 @@ public class Word2Vec implements Serializable  {
 
     public static INDArray readVocab(InMemoryLookupCache vocab, String path) throws IOException{
         BufferedReader br = new BufferedReader(new FileReader(path));
-        new HashMap();
+        Map<Pair<Integer,Integer>, INDArray> s0 = new HashMap();
+        int num = 0;
         try {
+            int n = 0;
+            int l = 0;
             while (true) {
                 String line = br.readLine();
                 if (line == null)
                     break;
                 String[] ss = line.split(" ");
-                String word = ss[0].substring(0,ss[0].length()-3);
+                String word = ss[0].substring(0, ss[0].length() - 3);
+                int k = Integer.parseInt(ss[0].substring(ss[0].length() - 2, ss[0].length() - 1));
                 double[] vector = new double[ss.length-1];
                 for (int i = 1; i < ss.length; i++)
                     vector[i-1] = Double.parseDouble(ss[i]);
+                n++;
+                if (k > l) {
+                    num = n;
+                    n = 0;
+                    l = k;
+                }
+                s0.put(new Pair(n, k), Nd4j.create(vector));
             }
         } finally {
             br.close();

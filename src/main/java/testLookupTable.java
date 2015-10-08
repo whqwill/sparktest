@@ -37,21 +37,27 @@ public class testLookupTable {
         b.addiRowVector(Nd4j.rand(42, new int[]{1, 4}).subi(0.5).divi(10));
         b.addRowVector(Nd4j.rand(42, new int[]{1, 4}).subi(0.5).divi(10));
 
+
         double[] c = new double[10];
         List<Integer> cc = new ArrayList<Integer>();
         for (int i = 0; i < 10; i++)
             cc.add(i+1);
 
+        b = Nd4j.create(c);
+        System.out.println(b);
+
         BufferedReader br = new BufferedReader(new FileReader("vectors.txt"));
         try {
             //while (true) {
-                String line = br.readLine();
+            String line = br.readLine();
                 //if (line == null)
                 //    break;
-                String ss = line.split(" ")[0];
+            String ss = line.split(" ")[0];
 
-                System.out.println(ss.substring(0,ss.length()-3));
-                String[] s = line.split(" ");
+            System.out.println(ss.substring(0,ss.length()-3));
+            System.out.println(ss.substring(ss.length()-2, ss.length()-1));
+
+            String[] s = line.split(" ");
 
             //}
         } finally {
