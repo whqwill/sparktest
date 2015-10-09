@@ -1,3 +1,5 @@
+import Spark.*;
+import org.deeplearning4j.models.word2vec.wordstore.inmemory.InMemoryLookupCache;
 import org.nd4j.linalg.api.complex.IComplexNDArray;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -6,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -37,7 +40,6 @@ public class testLookupTable {
         b.addiRowVector(Nd4j.rand(42, new int[]{1, 4}).subi(0.5).divi(10));
         b.addRowVector(Nd4j.rand(42, new int[]{1, 4}).subi(0.5).divi(10));
 
-
         double[] c = new double[10];
         List<Integer> cc = new ArrayList<Integer>();
         for (int i = 0; i < 10; i++)
@@ -46,23 +48,13 @@ public class testLookupTable {
         b = Nd4j.create(c);
         System.out.println(b);
 
-        BufferedReader br = new BufferedReader(new FileReader("vectors.txt"));
-        try {
-            //while (true) {
-            String line = br.readLine();
-                //if (line == null)
-                //    break;
-            String ss = line.split(" ")[0];
+        InMemoryLookupCache vocab = new InMemoryLookupCache();
+        INDArray syn0 = Spark.Word2Vec.readVocab(vocab, "vectors.txt", 2);
 
-            System.out.println(ss.substring(0,ss.length()-3));
-            System.out.println(ss.substring(ss.length()-2, ss.length()-1));
-
-            String[] s = line.split(" ");
-
-            //}
-        } finally {
-            br.close();
-        }
-
+        //System.out.println(vocab.numWords());
+        Collection<String> words = Spark.Word2Vec.wordsNearest(syn0,vocab,"bank",0,40,2);
+        System.out.println("bank(0): "+words);
+        words = Spark.Word2Vec.wordsNearest(syn0,vocab,"bank",1,40,2);
+        System.out.println("bank(1): "+words);
     }
 }

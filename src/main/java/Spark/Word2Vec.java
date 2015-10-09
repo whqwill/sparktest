@@ -245,10 +245,11 @@ public class Word2Vec implements Serializable  {
         write.close();
     }
 
-    public static INDArray readVocab(InMemoryLookupCache vocab, String path) throws IOException{
+    public static INDArray readVocab(InMemoryLookupCache vocab, String path, int K) throws IOException{
         BufferedReader br = new BufferedReader(new FileReader(path));
         Map<Pair<Integer,Integer>, INDArray> s0 = new HashMap();
         int num = 0;
+        int vectorLength = 0;
         try {
             int n = 0;
             int l = 0;
@@ -260,20 +261,29 @@ public class Word2Vec implements Serializable  {
                 String word = ss[0].substring(0, ss[0].length() - 3);
                 int k = Integer.parseInt(ss[0].substring(ss[0].length() - 2, ss[0].length() - 1));
                 double[] vector = new double[ss.length-1];
+                vectorLength = ss.length-1;
                 for (int i = 1; i < ss.length; i++)
                     vector[i-1] = Double.parseDouble(ss[i]);
+                s0.put(new Pair(n, k), Nd4j.create(vector));
+                if (k == 0)
+                    addTokenToVocabCache(vocab,word);
                 n++;
                 if (k > l) {
                     num = n;
                     n = 0;
                     l = k;
                 }
-                s0.put(new Pair(n, k), Nd4j.create(vector));
             }
         } finally {
             br.close();
         }
-        return null;
+        INDArray syn0 = Nd4j.zeros(num*K, vectorLength);
+        for (Map.Entry<Pair<Integer,Integer>, INDArray> ss: s0.entrySet()) {
+            if (ss.getKey().getFirst() < num) {
+                syn0.getRow(ss.getKey().getSecond()*num+ss.getKey().getFirst()).addi(ss.getValue());
+            }
+        }
+        return syn0;
     }
 
     private static void addTokenToVocabCache(InMemoryLookupCache vocab, String stringToken) {
